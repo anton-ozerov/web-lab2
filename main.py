@@ -1,34 +1,36 @@
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse, PlainTextResponse
+from datetime import datetime
 
 
 app = FastAPI()
 
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=[
-        "x-test",
-        "ngrok-skip-browser-warning",
-        "Content-Type",
-        "Accept",
-        "Access-Control-Allow-Headers",
-    ],
-)
+@app.get("/{date_path}/")
+async def get_date(date_path: str):
+    today = datetime.now()
 
+    expected = today.strftime("%d%m%y")
 
-@app.api_route("/result4/", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
-async def result4(request: Request):
-    x_test = request.headers.get("x-test")
-
-    body_bytes = await request.body()
-    body = body_bytes.decode("utf-8") if body_bytes else ""
+    if date_path != expected:
+        return JSONResponse(
+            status_code=404,
+            content={"error": "Not found"}
+        )
 
     return {
-        "message": "seerb",
-        "x-result": x_test,
-        "x-body": body
+        "date": today.strftime("%d-%m-%Y"),
+        "login": "seerb",
     }
+
+
+@app.get("/api/rv/{text}/")
+async def reverse_text(text: str):
+    for symb in text:
+        if symb not in "abcdefghijklmnopqrstuvwxyz":
+            return JSONResponse(
+                status_code=400,
+                content={"error": "only small engl sybmls"}
+            )
+    
+    return PlainTextResponse(text[::-1])
